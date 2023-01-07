@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -37,8 +38,6 @@ func main() {
 		}
 
 		go func(c net.Conn) {
-			defer c.Close()
-
 			reader := bufio.NewReader(c)
 			for {
 				cdata, err := reader.ReadBytes('\n')
@@ -47,18 +46,18 @@ func main() {
 					break
 				}
 
-				var req request
-				if err := json.Unmarshal(cdata, &req); err != nil {
-					log.Println(err)
-					break
+				req, err := buildRequest(cdata)
+				if err != nil {
+					c.Write([]byte(fmt.Sprintf("invalid request data: %w", err)))
+					c.Close()
 				}
 
-				sdata, err := json.Marshal(response{Method: "isPrime", Prime: isPrime(req.Number)})
+				respData, err := buildResponse(req.Number)
 				if err != nil {
 					log.Println(err)
-					break
+					c.Close()
 				}
-				c.Write(sdata)
+				c.Write(respData)
 			}
 		}(conn)
 	}
@@ -66,4 +65,25 @@ func main() {
 
 func isPrime(n int) bool {
 	return big.NewInt(int64(n)).ProbablyPrime(0)
+}
+
+func buildResponse(n int) ([]byte, error) {
+	data, err := json.Marshal(response{Method: "isPrime", Prime: isPrime(n)})
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+func buildRequest(data []byte) (request, error) {
+	var req request
+	if err := json.Unmarshal(data, &req); err != nil {
+		return req, err
+	}
+
+	if req.Method != "isPrime" {
+		return req, errors.New("invalid method")
+	}
+
+	return req, nil
 }
