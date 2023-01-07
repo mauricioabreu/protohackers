@@ -31,8 +31,8 @@ func main() {
 			log.Fatal(err)
 		}
 
-		prices := map[int32]int32{}
 		go func(c net.Conn) {
+			prices := map[int32]int32{}
 			var buf []byte
 
 			if _, err := io.ReadAtLeast(c, buf, 9); err != nil {
