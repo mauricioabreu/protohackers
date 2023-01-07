@@ -38,6 +38,7 @@ func main() {
 			if _, err := io.ReadAtLeast(c, buf, 9); err != nil {
 				c.Write([]byte(err.Error()))
 				c.Close()
+				return
 			}
 
 			msg := decodePayload(buf)
