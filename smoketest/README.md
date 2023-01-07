@@ -1,3 +1,3 @@
-# Smoke test
+# Smoke Test
 
-Problem: <https://protohackers.com/problem/1>
+Problem: <https://protohackers.com/problem/0>
