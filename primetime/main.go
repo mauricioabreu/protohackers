@@ -48,7 +48,7 @@ func main() {
 
 				req, err := buildRequest(cdata)
 				if err != nil {
-					c.Write([]byte(fmt.Sprintf("invalid request data: %w", err)))
+					c.Write([]byte(fmt.Sprintf("invalid request data: %s", err)))
 					c.Close()
 				}
 
