@@ -12,8 +12,8 @@ import (
 )
 
 type request struct {
-	Method string `json:"method"`
-	Number int    `json:"number"`
+	Method string   `json:"method"`
+	Number *float64 `json:"number"`
 }
 
 func main() {
@@ -43,7 +43,7 @@ func main() {
 					return
 				}
 
-				respData := buildResponse(req.Number)
+				respData := buildResponse(*req.Number)
 				if err != nil {
 					log.Println(err)
 					c.Close()
@@ -53,10 +53,6 @@ func main() {
 			}
 		}(conn)
 	}
-}
-
-func isPrime(n int) bool {
-	return big.NewInt(int64(n)).ProbablyPrime(0)
 }
 
 func buildRequest(data []byte) (request, error) {
@@ -69,10 +65,18 @@ func buildRequest(data []byte) (request, error) {
 		return req, errors.New("invalid method")
 	}
 
+	if req.Number == nil {
+		return req, errors.New("missing number")
+	}
+
 	return req, nil
 }
 
-func buildResponse(n int) []byte {
+func buildResponse(n float64) []byte {
 	resp := fmt.Sprintf(`{"method":"isPrime","prime":%t}`+"\n", isPrime(n))
 	return []byte(resp)
+}
+
+func isPrime(n float64) bool {
+	return big.NewInt(int64(n)).ProbablyPrime(0)
 }
