@@ -16,11 +16,6 @@ type request struct {
 	Number int    `json:"number"`
 }
 
-type response struct {
-	Method string `json:"method"`
-	Prime  bool   `json:"prime"`
-}
-
 func main() {
 	port := flag.Int("port", 30001, "Specify the port run the server")
 	flag.Parse()
@@ -38,41 +33,30 @@ func main() {
 		}
 
 		go func(c net.Conn) {
-			reader := bufio.NewReader(c)
-			cdata, err := reader.ReadBytes('\n')
-			if err != nil {
-				log.Println(err)
-				return
-			}
+			sc := bufio.NewScanner(c)
+			for sc.Scan() {
+				cdata := sc.Bytes()
+				req, err := buildRequest(cdata)
+				if err != nil {
+					c.Write([]byte(fmt.Sprintf("invalid request data: %s\n", err)))
+					c.Close()
+					return
+				}
 
-			req, err := buildRequest(cdata)
-			if err != nil {
-				c.Write([]byte(fmt.Sprintf("invalid request data: %s", err)))
-				c.Close()
-				return
+				respData := buildResponse(req.Number)
+				if err != nil {
+					log.Println(err)
+					c.Close()
+					return
+				}
+				c.Write(respData)
 			}
-
-			respData, err := buildResponse(req.Number)
-			if err != nil {
-				log.Println(err)
-				c.Close()
-				return
-			}
-			c.Write(respData)
 		}(conn)
 	}
 }
 
 func isPrime(n int) bool {
 	return big.NewInt(int64(n)).ProbablyPrime(0)
-}
-
-func buildResponse(n int) ([]byte, error) {
-	data, err := json.Marshal(response{Method: "isPrime", Prime: isPrime(n)})
-	if err != nil {
-		return data, err
-	}
-	return data, nil
 }
 
 func buildRequest(data []byte) (request, error) {
@@ -86,4 +70,9 @@ func buildRequest(data []byte) (request, error) {
 	}
 
 	return req, nil
+}
+
+func buildResponse(n int) []byte {
+	resp := fmt.Sprintf(`{"method":"isPrime","prime":%t}`+"\n", isPrime(n))
+	return []byte(resp)
 }
