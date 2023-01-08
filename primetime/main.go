@@ -39,26 +39,26 @@ func main() {
 
 		go func(c net.Conn) {
 			reader := bufio.NewReader(c)
-			for {
-				cdata, err := reader.ReadBytes('\n')
-				if err != nil {
-					log.Println(err)
-					break
-				}
-
-				req, err := buildRequest(cdata)
-				if err != nil {
-					c.Write([]byte(fmt.Sprintf("invalid request data: %s", err)))
-					c.Close()
-				}
-
-				respData, err := buildResponse(req.Number)
-				if err != nil {
-					log.Println(err)
-					c.Close()
-				}
-				c.Write(respData)
+			cdata, err := reader.ReadBytes('\n')
+			if err != nil {
+				log.Println(err)
+				return
 			}
+
+			req, err := buildRequest(cdata)
+			if err != nil {
+				c.Write([]byte(fmt.Sprintf("invalid request data: %s", err)))
+				c.Close()
+				return
+			}
+
+			respData, err := buildResponse(req.Number)
+			if err != nil {
+				log.Println(err)
+				c.Close()
+				return
+			}
+			c.Write(respData)
 		}(conn)
 	}
 }
