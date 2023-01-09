@@ -33,36 +33,36 @@ func main() {
 
 		go func(c net.Conn) {
 			prices := map[int32]int32{}
-			var buf []byte
+			buf := make([]byte, 9)
 
-			if _, err := io.ReadAtLeast(c, buf, 9); err != nil {
-				c.Write([]byte(err.Error()))
-				c.Close()
-				return
-			}
+			for {
+				if _, err := io.ReadAtLeast(c, buf, 9); err != nil {
+					return
+				}
 
-			msg := decodePayload(buf)
-			switch msg.Type {
-			case 'I':
-				prices[msg.Arg1] = msg.Arg2
-			case 'Q':
-				var sum, total int32
+				msg := decodePayload(buf)
+				switch msg.Type {
+				case 'I':
+					prices[msg.Arg1] = msg.Arg2
+				case 'Q':
+					var sum, total int32
 
-				for time, price := range prices {
-					if time >= msg.Arg1 && time <= msg.Arg2 {
-						total++
-						sum += price
+					for time, price := range prices {
+						if time >= msg.Arg1 && time <= msg.Arg2 {
+							total++
+							sum += price
+						}
 					}
-				}
 
-				if total == 0 {
-					total = 1
-				}
+					if total == 0 {
+						total = 1
+					}
 
-				mean := sum / total
-				ans := make([]byte, 4)
-				binary.BigEndian.PutUint32(ans, uint32(mean))
-				c.Write(ans)
+					mean := sum / total
+					ans := make([]byte, 4)
+					binary.BigEndian.PutUint32(ans, uint32(mean))
+					c.Write(ans)
+				}
 			}
 		}(conn)
 	}
