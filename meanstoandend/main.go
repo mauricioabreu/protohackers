@@ -45,15 +45,16 @@ func main() {
 				case 'I':
 					prices[msg.Arg1] = msg.Arg2
 				case 'Q':
-					var sum, total int32
+					var sum, total int64
 
 					for time, price := range prices {
 						if time >= msg.Arg1 && time <= msg.Arg2 {
 							total++
-							sum += price
+							sum += int64(price)
 						}
 					}
 
+					// avoid division by zero
 					if total == 0 {
 						total = 1
 					}
